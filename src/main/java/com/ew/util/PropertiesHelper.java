@@ -2,7 +2,8 @@ package com.ew.util;
 
 public class PropertiesHelper {
 	/**
-	 * Returns the appropriate 
+	 * Returns the appropriate
+	 * 
 	 * @param asArgs
 	 * @param name
 	 * @param defaultLoc
@@ -11,6 +12,5 @@ public class PropertiesHelper {
 	public static String getArgument(String[] asArgs, String name, int defaultLoc) {
 		return asArgs[defaultLoc];
 	}
-	
 
 }

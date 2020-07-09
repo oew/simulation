@@ -1,106 +1,126 @@
 package com.ew.simulation;
 
+import com.ew.gson.GsonFactory;
 import java.util.LinkedList;
 import java.util.List;
 
-import com.ew.gson.typeadapters.GsonFactory;
+
+/**
+ * <p>
+ * A TimeRangesTrend is a list of TimeRangeTrend and a default trend. If the trend time is between a
+ * time range trend that trend is applied. Otherwise the default trend is applied.
+ * </p>
+ * 
+ * @author Everett Williams
+ * @version 1.0
+ * @date 05/21/2020
+ *
+ */
 
 public class TimeRangesTrend extends Trend {
-	List<TimeRangeTrend> trends;
-	Trend defaultTrend;
+  public List<TimeRangeTrend> trends;
+  public Trend defaultTrend;
 
-	public TimeRangesTrend() {
-		classname = this.getClass().getName(); 
-	}
-	public static void main(String[] args) {
-		
-		TimeRangesTrend tr = TimeRangesTrend.getDefault();
-		String json = GsonFactory.getGSon().toJson(tr);
-		System.out.println(json);
-		TimeRangesTrend tr2 = (TimeRangesTrend) GsonFactory.getGSon().fromJson(json, TimeRangesTrend.class);
-		long now = System.currentTimeMillis();
-		long next = tr2.nextLong(now, 0L);
-		System.out.println(next);
-		
-	//	System.out.println(t.checkTime(System.currentTimeMillis()));
-	}
-	
-	public static TimeRangesTrend getDefault() {
-		TimeRangesTrend tr = new TimeRangesTrend();
-		tr.attribute = "SystemCpuLoad";
-		tr.isIncremental = false;
-		
-		TimeRangeTrend t = new TimeRangeTrend();
-		t.attribute = "SystemCpuLoad";
-		t.rangeStart = "10:00:00";
-		t.rangeEnd = "11:00:00";
-		t.rangeFormat= "HH:mm:ss";
-		UniformTrend subTrend = new UniformTrend();
-		subTrend.max = 100.0;
-		subTrend.min = 50.0;
-		subTrend.attribute = t.attribute;
-		t.trend = subTrend;
+  /**
+   * Basic Constructor.
+   */
+  public TimeRangesTrend() {
+    classname = this.getClass().getName();
+  }
 
-		tr.trends = new LinkedList<TimeRangeTrend>();
-		tr.trends.add(t);
-		tr.defaultTrend = new ConstantTrend(tr.attribute, 10, false);
-		return tr;
-	}
-	
+  /**
+   * Prints an example Trend for help with configuration.
+   * 
+   * @param args no arguments used.
+   */
+  public static void main(String[] args) {
+    TimeRangesTrend tr = TimeRangesTrend.getDefault();
+    String json = GsonFactory.getGSon().toJson(tr);
+    System.out.println(json);
 
-	@Override
-	public Double nextDouble(long timestamp, Double prior) {
-		for (TimeRangeTrend t : trends) {
-			if (t.checkTime(timestamp))
-				return t.nextDouble(timestamp, prior);
-		}
-		// TODO Auto-generated method stub
-		return defaultTrend.nextDouble(timestamp, prior);
-	}
+  }
 
-	@Override
-	public Integer nextInteger(long timestamp, Integer prior) {
-		for (TimeRangeTrend t : trends) {
-			if (t.checkTime(timestamp))
-				return t.nextInteger(timestamp, prior);
-		}
-		// TODO Auto-generated method stub
-		return defaultTrend.nextInteger(timestamp, prior);
-	}
+  /**
+   * Get the default TimeRangesTrend.
+   * 
+   * @return a TimeRangesTrend for simple testing.
+   */
+  public static TimeRangesTrend getDefault() {
+    TimeRangesTrend trendRange = new TimeRangesTrend();
+    final String attribute = "SystemCpuLoad";
+    trendRange.attribute = attribute;
+    trendRange.isIncremental = false;
 
-	@Override
-	public Long nextLong(long timestamp, Long prior) {
-		for (TimeRangeTrend t : trends) {
-			if (t.checkTime(timestamp))
-				return t.nextLong(timestamp, prior);
-		}
-		// TODO Auto-generated method stub
-		return defaultTrend.nextLong(timestamp, prior);
-	}
+    UniformTrend subTrend = new UniformTrend(attribute, 100.0, 50.0, false);
+    TimeRangeTrend trend =
+        new TimeRangeTrend(attribute, "10:00:00", "11:00:00", "HH:mm:ss", subTrend);
 
-	@Override
-	public String nextString(long timestamp) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    trendRange.trends = new LinkedList<TimeRangeTrend>();
+    trendRange.trends.add(trend);
+    trendRange.defaultTrend = new ConstantTrend(attribute, 10, false);
+    return trendRange;
+  }
 
-	@Override
-	public long nextDatetime(long timestamp) {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-	
-	public String toString() {
-		StringBuffer sb = new StringBuffer();
-		sb.append("TimeRangesTrend [attribute=").append(attribute)
-		.append(", incremental=").append(isIncremental())
-		.append(", DefaultTrend = ").append(this.defaultTrend);
-		sb.append(", Ranges  = [");
-		for (TimeRangeTrend t : trends) 
-			sb.append(t.toString()).append(", ");
-			
-		sb.append("]]");
-		return sb.toString();
-	}
+  @Override
+  public Double nextDouble(long timestamp, Double prior) {
+    for (TimeRangeTrend t : trends) {
+      if (t.checkTime(timestamp)) {
+        return t.nextDouble(timestamp, prior);
+      }
+    }
+    return defaultTrend.nextDouble(timestamp, prior);
+  }
 
+  @Override
+  public Integer nextInteger(long timestamp, Integer prior) {
+    for (TimeRangeTrend t : trends) {
+      if (t.checkTime(timestamp)) {
+        return t.nextInteger(timestamp, prior);
+      }
+    }
+    return defaultTrend.nextInteger(timestamp, prior);
+  }
+
+  @Override
+  public Long nextLong(long timestamp, Long prior) {
+    for (TimeRangeTrend t : trends) {
+      if (t.checkTime(timestamp)) {
+        return t.nextLong(timestamp, prior);
+      }
+    }
+    return defaultTrend.nextLong(timestamp, prior);
+  }
+
+  @Override
+  public String nextString(long timestamp) {
+    for (TimeRangeTrend t : trends) {
+      if (t.checkTime(timestamp)) {
+        return t.nextString(timestamp);
+      }
+    }
+    return defaultTrend.nextString(timestamp);
+  }
+
+  @Override
+  public long nextDatetime(long timestamp) {
+    for (TimeRangeTrend t : trends) {
+      if (t.checkTime(timestamp)) {
+        return t.nextDatetime(timestamp);
+      }
+    }
+    return defaultTrend.nextDatetime(timestamp);
+  }
+
+  @Override
+  public String toString() {
+    StringBuffer sb = new StringBuffer();
+    sb.append("TimeRangesTrend [attribute=").append(attribute).append(", incremental=")
+        .append(isIncremental()).append(", DefaultTrend = ").append(this.defaultTrend);
+    sb.append(", Ranges  = [");
+    for (TimeRangeTrend t : trends) {
+      sb.append(t.toString()).append(", ");
+    }
+    sb.append("]]");
+    return sb.toString();
+  }
 }

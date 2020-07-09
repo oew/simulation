@@ -1,75 +1,94 @@
 package com.ew.simulation;
 
-import com.ew.gson.typeadapters.GsonFactory;
+import com.ew.gson.GsonFactory;
 
 /**
- * <p>A Constant trend for setting defaults and applying stair step trend lines in correlation with the (@link TimeRangesTrend) 
+ * <p>
+ * A Trend that will return a constant number or string. Use with {@link TimeRangeTrend} and
+ * {@link TimeRangesTrend} for stair step trends and modifying "state" strings.
  * </p>
- * 
+ * <p>
+ * Extends:
+ * </p>
+ * {@link Trend}
+ * <p>
+ * </p>
  * 
  * @author Everett Williams
  * @version 1.0
- * @since 2020/05/19
  */
 public class ConstantTrend extends Trend {
-	Object value;
-	
-	public static void main(String[] args) {
-		ConstantTrend t = new ConstantTrend();
-		t.attribute = "LastUpdated";
-		t.value = 10000;
-		t.setIncremental(true);
-		Integer i = (new ConstantTrend("slop", 10, false)).nextInteger(System.currentTimeMillis(), 0);
-		System.out.println("i = " + i);
-		String json = GsonFactory.getGSon().toJson(t);
-		Trend trend = GsonFactory.getGSon().fromJson(json, Trend.class);
-		System.out.println(json);
-		System.out.println(trend);
-	}
+  public Object value;
 
-	public ConstantTrend() {
-		classname = this.getClass().getName(); 
-	}
-	
-	public ConstantTrend(String attribute, Object value, boolean isIncremental) {
-		this.attribute = attribute;
-		this.value = value;
-		this.isIncremental = isIncremental;
-	}
+  /**
+   * Prints an example trend JSON for simulation building.  
+   * @param args not used.
+   */
+  public static void main(String[] args) {
+    ConstantTrend t = new ConstantTrend("LastUpdated", 10000, true);
+    String json = GsonFactory.getGSon().toJson(t);
+    System.out.println(json);
+  }
 
-	@Override
-	public Double nextDouble(long timestamp, Double prior) {
-		if (isIncremental) return Double.valueOf(value.toString()) + prior;
-		return Double.valueOf(value.toString());
-	}
+  /**
+   * Default Constructor.
+   */
+  public ConstantTrend() {
+    classname = this.getClass().getName();
+  }
 
-	@Override
-	public Integer nextInteger(long timestamp, Integer prior) {
-		if (isIncremental) return Double.valueOf(value.toString()).intValue() + prior;
-		return Double.valueOf(value.toString()).intValue();
-	}
+  /**
+   * Assignment Constructor.
+   * 
+   * @param attribute the attribute to apply the trend.
+   * @param value the value for the trend.
+   * @param isIncremental if the trend applies the value incrementally to the prior value.
+   */
+  public ConstantTrend(String attribute, Object value, boolean isIncremental) {
+    this.attribute = attribute;
+    this.value = value;
+    this.isIncremental = isIncremental;
+  }
 
-	@Override
-	public Long nextLong(long timestamp, Long prior) {
-		if (isIncremental) return Double.valueOf(value.toString()).longValue() + prior;
-		return Double.valueOf(value.toString()).longValue();
-	}
+  @Override
+  public Double nextDouble(long timestamp, Double prior) {
+    if (isIncremental) {
+      return Double.valueOf(value.toString()) + prior;
+    }
+    return Double.valueOf(value.toString());
+  }
 
-	@Override
-	public String nextString(long timestamp) {
-		return value.toString();
-	}
+  @Override
+  public Integer nextInteger(long timestamp, Integer prior) {
+    if (isIncremental) {
+      return Double.valueOf(value.toString()).intValue() + prior;
+    }
+    return Double.valueOf(value.toString()).intValue();
+  }
 
-	@Override
-	public long nextDatetime(long timestamp) {
-		return timestamp;
-	}
-	
-	public String toString() {
-		StringBuffer sb = new StringBuffer();
-		sb.append("ConstantTrend [attribute=")
-		.append(attribute).append(", value=").append(value)
-		.append(", isIncremenatal=").append(isIncremental).append("]");
-		return sb.toString();
-	}
+  @Override
+  public Long nextLong(long timestamp, Long prior) {
+    if (isIncremental) {
+      return Double.valueOf(value.toString()).longValue() + prior;
+    }
+    return Double.valueOf(value.toString()).longValue();
+  }
+
+  @Override
+  public String nextString(long timestamp) {
+    return value.toString();
+  }
+
+  @Override
+  public long nextDatetime(long timestamp) {
+    return Double.valueOf(value.toString()).longValue();
+  }
+
+  @Override
+  public String toString() {
+    StringBuffer sb = new StringBuffer();
+    sb.append("ConstantTrend [attribute=").append(attribute).append(", value=").append(value)
+        .append(", isIncremenatal=").append(isIncremental).append("]");
+    return sb.toString();
+  }
 }
