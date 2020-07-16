@@ -53,7 +53,7 @@ public class GsonFactory {
   }
 
   /**
-   * Set an Object Field name based using reflection
+   * Set an Object Field name based using reflection.
    * 
    * @param object Object to update.
    * @param fieldName the field to update.
@@ -70,8 +70,9 @@ public class GsonFactory {
         if (o.getName().equals("long")) {
           long lval = Math.round((Double) fieldValue);
           field.set(object, lval);
-        } else
+        } else {
           field.set(object, fieldValue);
+        }
         return true;
       } catch (NoSuchFieldException e) {
         clazz = clazz.getSuperclass();

@@ -1,9 +1,5 @@
 package com.ew.util;
 
-import java.util.Map;
-
-import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.MulticastConfig;
@@ -11,63 +7,95 @@ import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.map.IMap;
+import com.hazelcast.query.impl.predicates.LikePredicate;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
+/**
+ * Helper class to access Hazelcast maps.
+ * 
+ * @author Everett Williams
+ * @since 1.0
+ */
 public class HazelcastHelper {
 
-  public HazelcastHelper() {
-    // TODO Auto-generated constructor stub
-  }
+  /**
+   * return a Hazelcast Instance.
+   * 
+   * @param iConType the connection type (client or server).
+   * @return the Hazelcast Instance.
+   */
+  private HazelcastInstance getNewInstance() {
+    if (instance == null) {
+      String configFile = "./hazelcast.xml";
+      Config cfg;
+      String port = System.getProperty("sl.hazelcast.port");
 
-  public HazelcastInstance getInstance(int iConType) {
-    if (iConType == CLIENT_CONN) {
-      ClientConfig clientConfig = new ClientConfig();
-      clientConfig.getNetworkConfig().addAddress("localhost", "localhost:5702");
-
-      HazelcastInstance instance = HazelcastClient.newHazelcastClient(clientConfig);
-      return instance;
-    } else if (iConType == SERVER_CONN) {
-
-      if (m_instance == null) {
-        String sFile = "./hazelcast.xml";
-        Config cfg;
-        String sPort = System.getProperty("sl.hazelcast.port");
-
-        try {
-          cfg = new XmlConfigBuilder(sFile).build();
-        } catch (Exception e) {
-          cfg = new Config();
-        }
-        if (sPort != null && sPort.length() > 0) {
-
-          NetworkConfig net = cfg.getNetworkConfig();
-          JoinConfig jc = net.getJoin();
-          MulticastConfig mcc = jc.getMulticastConfig();
-
-          Integer iPort = Integer.valueOf(sPort);
-          mcc.setMulticastPort(iPort);
-          jc.setMulticastConfig(mcc);
-          net.setJoin(jc);
-          // cfg.setNetworkConfig(net);
-        }
-        m_instance = Hazelcast.newHazelcastInstance(cfg);
+      try {
+        cfg = new XmlConfigBuilder(configFile).build();
+      } catch (Exception e) {
+        cfg = new Config();
       }
-      return m_instance;
+      if (port != null && port.length() > 0) {
+
+        NetworkConfig net = cfg.getNetworkConfig();
+        JoinConfig jc = net.getJoin();
+        MulticastConfig mcc = jc.getMulticastConfig();
+
+        mcc.setMulticastPort(Integer.valueOf(port));
+        jc.setMulticastConfig(mcc);
+        net.setJoin(jc);
+      }
+      instance = Hazelcast.newHazelcastInstance(cfg);
     }
-    return null;
+    return instance;
   }
 
-  protected HazelcastInstance getInstance() {
-    if (m_instance == null) {
-      m_instance = getInstance(HazelcastHelper.SERVER_CONN);
+  /**
+   * Get a hazelcast connection instance.
+   * 
+   * @return a hazelcast connection.
+   */
+  private HazelcastInstance getInstance() {
+    if (instance == null) {
+      instance = getNewInstance();
     }
-    return m_instance;
+    return instance;
   }
 
-  public Map getMap(String sMapName) {
-    return getInstance().getMap(sMapName);
+  /**
+   * get a map of the specified name.
+   * 
+   * @param name the name of the map.
+   * @return a Hazelcast Map Implementation.
+   */
+  public Map getMap(String name) {
+    return getInstance().getMap(name);
   }
 
-  protected HazelcastInstance m_instance;
-  public static int CLIENT_CONN = 1;
-  public static int SERVER_CONN = 2;
+  /**
+   * Apply a hazelcast query to a map.
+   * @param data the map to reduce.
+   * @param query the query to apply.
+   * @return the Set of keys meeting the query.
+   */
+  public Set<String> reduce(Map data, String query) {
+    Set keys = null;
+    if (query.contains("%")) {
+      IMap map = (IMap) data;
+      LikePredicate lp = new LikePredicate("__key", query);
+      keys = map.keySet(lp);
+       return keys;
+    } else {
+      keys = new HashSet<String>();
+      keys.add(query);
+    }
+    return keys;
+  }
+ 
+  protected HazelcastInstance instance;
+  public static final int CLIENT_CONN = 1;
+  public static final int SERVER_CONN = 2;
 }

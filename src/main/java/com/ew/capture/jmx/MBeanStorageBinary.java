@@ -1,13 +1,12 @@
 package com.ew.capture.jmx;
 
+import com.ew.util.FileHelper;
+import com.ew.util.SerializationHelper;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.Map;
-
 import javax.management.MBeanInfo;
 
-import com.ew.util.FileHelper;
-import com.ew.util.SerializationHelper;
 
 /**
  * Implement MBeanStorage to disk using standard object serialization.
@@ -18,7 +17,7 @@ import com.ew.util.SerializationHelper;
 public class MBeanStorageBinary implements MBeanStorage {
 
   @Override
-  public void StoreMBean(String location, String domain, int index, Map<String, Object> data,
+  public void storeMBean(String location, String domain, int index, Map<String, Object> data,
       MBeanInfo info) {
     String fileBase = domain + formatIndex(index);
 
@@ -29,13 +28,12 @@ public class MBeanStorageBinary implements MBeanStorage {
       byte[] byteInfo = SerializationHelper.toByteArray(info);
       FileHelper.writeFile(location + fileBase + INFOSUFFIX, byteInfo);
     } catch (IOException e) {
-      // TODO Auto-generated catch block
       e.printStackTrace();
     }
   }
 
   @Override
-  public MBeanInfo GetMBeanInfo(String location, String domain, int index) {
+  public MBeanInfo getMBeanInfo(String location, String domain, int index) {
     String fileBase = domain + formatIndex(index);
 
     try {
@@ -52,7 +50,7 @@ public class MBeanStorageBinary implements MBeanStorage {
   }
 
   @Override
-  public Map<String, Object> GetMBeanData(String location, String domain, int index) {
+  public Map<String, Object> getMBeanData(String location, String domain, int index) {
     String fileBase = domain + formatIndex(index);
 
     try {
@@ -68,13 +66,8 @@ public class MBeanStorageBinary implements MBeanStorage {
     return null;
   }
 
-  public static void main(String[] args) {
-    // TODO Auto-generated method stub
-
-  }
-
   @Override
-  public void StoreMBeanNdx(String location, String domain, int index, Map<String, String> ndx) {
+  public void storeMBeanNdx(String location, String domain, int index, Map<String, String> ndx) {
     byte[] bytesNdx;
     try {
       bytesNdx = SerializationHelper.toByteArray(ndx);
@@ -86,7 +79,7 @@ public class MBeanStorageBinary implements MBeanStorage {
   }
 
   @Override
-  public Map<String, String> GetMBeanNdx(String location, String domain) {
+  public Map<String, String> getMBeanNdx(String location, String domain) {
     String fileName = location + domain + INDEXSUFFIX;
     byte[] data = FileHelper.getBytes(fileName);
     Map<String, String> map;

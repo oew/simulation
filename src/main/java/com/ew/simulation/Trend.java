@@ -35,7 +35,7 @@ public class Trend {
    */
   public String getType() {
     return "";
-  };
+  }
 
   /**
    * The map attribute the trend is applied to.
@@ -44,7 +44,7 @@ public class Trend {
    */
   public String getAttribute() {
     return attribute;
-  };
+  }
 
   /**
    * Set if the trend is applied incrementally to the the prior value.
@@ -54,7 +54,7 @@ public class Trend {
    */
   public void setIncremental(boolean incremental) {
     isIncremental = incremental;
-  };
+  }
 
   /**
    * Determine if the trend values are applied incrementatlly to the prior value.
@@ -64,7 +64,7 @@ public class Trend {
    */
   public boolean isIncremental() {
     return isIncremental;
-  };
+  }
 
   /**
    * Returns the next value in the trend sequence.
@@ -75,7 +75,7 @@ public class Trend {
    */
   public Double nextDouble(long timestamp, Double prior) {
     throw new UnsupportedOperationException();
-  };
+  }
 
   /**
    * Returns the next value in the trend sequence.
@@ -86,7 +86,7 @@ public class Trend {
    */
   public Integer nextInteger(long timestamp, Integer prior) {
     throw new UnsupportedOperationException();
-  };
+  }
 
   /**
    * Returns the next value in the trend sequence.
@@ -97,7 +97,7 @@ public class Trend {
    */
   public Long nextLong(long timestamp, Long prior) {
     throw new UnsupportedOperationException();
-  };
+  }
 
   /**
    * Returns the next value in the trend sequence.
@@ -107,7 +107,7 @@ public class Trend {
    */
   public String nextString(long timestamp) {
     throw new UnsupportedOperationException();
-  };
+  }
 
   /**
    * Returns the next value in the trend sequence.
@@ -117,6 +117,5 @@ public class Trend {
    */
   public long nextDatetime(long timestamp) {
     throw new UnsupportedOperationException();
-  };
-
+  }
 }

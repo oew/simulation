@@ -1,29 +1,24 @@
 package com.ew.capture.jmx;
 
-import java.text.DecimalFormat;
-import java.util.HashMap;
+import com.ew.simulation.MapFactory;
+import com.ew.util.HazelcastHelper;
+import com.ew.util.MBeanHelper;
+import com.hazelcast.map.IMap;
+import com.hazelcast.query.impl.predicates.LikePredicate;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
-import java.util.HashSet;
 import java.util.Map.Entry;
-
+import java.util.Set;
+import java.util.function.Predicate;
 import javax.management.InstanceAlreadyExistsException;
-import javax.management.InstanceNotFoundException;
-import javax.management.IntrospectionException;
 import javax.management.MBeanInfo;
 import javax.management.MBeanRegistrationException;
 import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
-import javax.management.ReflectionException;
 
-import com.ew.simulation.MapFactory;
-import com.ew.util.HazelcastHelper;
-import com.ew.util.MBeanHelper;
-import com.hazelcast.map.IMap;
-import com.hazelcast.query.impl.predicates.LikePredicate;
 
 public class JmxDomainSimulation extends MapFactory {
   public String location = "/home/everett/sstest/json/";
@@ -32,13 +27,21 @@ public class JmxDomainSimulation extends MapFactory {
   public String serialization = "JSON";
   public String classname = "";
 
+  /*
+   * Default Constructor.
+   */
   public JmxDomainSimulation() {
     classname = this.getClass().getName();
   }
 
-  public static void main(String[] asArgs) {
+  /**
+   * Load a JMX Snapshot and apply Trends to that snapshot. This is mostly used for testing.
+   * 
+   * @param args not used.
+   */
+  public static void main(String[] args) {
     JmxDomainSimulation sim = new JmxDomainSimulation();
-    sim.run(asArgs);
+    sim.run(args);
     while (true) {
       try {
         Thread.sleep(1000);
@@ -48,9 +51,14 @@ public class JmxDomainSimulation extends MapFactory {
     }
   }
 
-  private HazelcastHelper m_helper;
+  private HazelcastHelper helper;
 
-  public void run(String[] asArgs) {
+  /**
+   * Load the JMX Snapshot, register the MBeans and apply the trends.
+   * 
+   * @param args not used.
+   */
+  public void run(String[] args) {
     HazelcastHelper helper = getHelper();
 
     MBeanServer mbs = MBeanHelper.findMBeanServer();
@@ -72,7 +80,7 @@ public class JmxDomainSimulation extends MapFactory {
       MBeanInfo mbi = (MBeanInfo) info.get(key);
       String name = stripDomain(key, domain);
 
-      MBeanWrapper mbw = new MBeanWrapper(domain, key, mbi, sharedData, this);
+      MBeanWrapper mbw = new MBeanWrapper(domain, key, mbi, this);
       ObjectName on;
       try {
         on = new ObjectName(targetDomain + ":" + name);
@@ -97,42 +105,43 @@ public class JmxDomainSimulation extends MapFactory {
    * @return a key property string of the MBean.
    */
   public String stripDomain(String name, String domain) {
-    String sPrefix = "jmxdomain=" + domain + ",";
-    if (name.startsWith(sPrefix)) {
-      return name.replaceFirst(sPrefix, "");
+    String pre = "jmxdomain=" + domain + ",";
+    if (name.startsWith(pre)) {
+      return name.replaceFirst(pre, "");
     }
     return name;
   }
 
   @Override
-  public Map getDataMap() {
+  public Map<String, Map> getSimulationMap() {
     return getHelper().getMap("mbean-attributes");
   }
 
+  /**
+   * get the MBeanInfo as a Map.
+   * 
+   * @return a map with string key and MBeanInfo values
+   */
   public Map getInfoMap() {
     return getHelper().getMap("mbean-info");
   }
 
-  public HazelcastHelper getHelper() {
-    if (m_helper == null) {
-      m_helper = new HazelcastHelper();
+  /**
+   * Accessor method of the Hazelcast helper.
+   * 
+   * @return the Helper Object.
+   */
+  private HazelcastHelper getHelper() {
+    if (helper == null) {
+      helper = new HazelcastHelper();
     }
-    return m_helper;
+    return helper;
   }
 
   @Override
   public Set<String> reduce(Map data, String query) {
-    Set keys = null;
-    if (query.contains("%")) {
-      IMap iMap = (IMap) data;
-      LikePredicate lp = new LikePredicate("__key", query);
-      keys = iMap.keySet(lp);
-      return keys;
-    } else {
-      keys = new HashSet<String>();
-      keys.add(query);
-    }
-    return keys;
+    HazelcastHelper helper = getHelper();
+    return helper.reduce(data, query);
   }
 
   @Override
@@ -149,6 +158,7 @@ public class JmxDomainSimulation extends MapFactory {
     Map info = ss.getDomainInfo(domain, location);
 
     sharedData.putAll(data);
+    sharedInfo.putAll(info);
 
     for (Iterator mbeans = data.entrySet().iterator(); mbeans.hasNext();) {
       Entry mbean = (Entry) mbeans.next();
@@ -157,7 +167,7 @@ public class JmxDomainSimulation extends MapFactory {
       MBeanInfo mbi = (MBeanInfo) info.get(key);
       String name = stripDomain(key, domain);
 
-      MBeanWrapper mbw = new MBeanWrapper(domain, key, mbi, sharedData, this);
+      MBeanWrapper mbw = new MBeanWrapper(domain, key, mbi, this);
       ObjectName on;
       try {
         on = new ObjectName(targetDomain + ":" + name);

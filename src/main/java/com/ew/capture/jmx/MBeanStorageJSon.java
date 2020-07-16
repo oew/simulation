@@ -21,7 +21,7 @@ import com.google.gson.Gson;
 public class MBeanStorageJSon implements MBeanStorage {
 
   @Override
-  public void StoreMBean(String location, String domain, int index, Map<String, Object> data,
+  public void storeMBean(String location, String domain, int index, Map<String, Object> data,
       MBeanInfo info) {
 
     String fileBase = domain + formatIndex(index);
@@ -34,7 +34,7 @@ public class MBeanStorageJSon implements MBeanStorage {
   }
 
   @Override
-  public void StoreMBeanNdx(String location, String domain, int index, Map<String, String> ndx) {
+  public void storeMBeanNdx(String location, String domain, int index, Map<String, String> ndx) {
     String jsonNdx;
 
     jsonNdx = jsonFromMap(ndx);
@@ -42,7 +42,7 @@ public class MBeanStorageJSon implements MBeanStorage {
   }
 
   @Override
-  public Map<String, String> GetMBeanNdx(String location, String domain) {
+  public Map<String, String> getMBeanNdx(String location, String domain) {
     String file = location + domain + INDEXSUFFIX;
 
     String jsonNdx = FileHelper.getText(file);
@@ -50,7 +50,7 @@ public class MBeanStorageJSon implements MBeanStorage {
   }
 
   @Override
-  public MBeanInfo GetMBeanInfo(String location, String domain, int index) {
+  public MBeanInfo getMBeanInfo(String location, String domain, int index) {
     String fileBase = location + domain + formatIndex(index);
     String file = fileBase + INFOSUFFIX;
 
@@ -60,7 +60,7 @@ public class MBeanStorageJSon implements MBeanStorage {
   }
 
   @Override
-  public Map<String, Object> GetMBeanData(String location, String domain, int index) {
+  public Map<String, Object> getMBeanData(String location, String domain, int index) {
     String fileBase = location + domain + formatIndex(index);
     String file = fileBase + DATASUFFIX;
     String jsonMap = FileHelper.getText(file);

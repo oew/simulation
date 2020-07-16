@@ -1,7 +1,6 @@
 package com.ew.capture.jmx;
 
 import java.util.Map;
-
 import javax.management.MBeanInfo;
 
 /**
@@ -22,7 +21,7 @@ public interface MBeanStorage {
    * @param data the MBean attributes
    * @param info the MBeanInfo.
    */
-  public void StoreMBean(String location, String domain, int index, Map<String, Object> data,
+  public void storeMBean(String location, String domain, int index, Map<String, Object> data,
       MBeanInfo info);
 
   /**
@@ -33,7 +32,7 @@ public interface MBeanStorage {
    * @param index the Index count.
    * @param ndx The index map.
    */
-  public void StoreMBeanNdx(String location, String domain, int index, Map<String, String> ndx);
+  public void storeMBeanNdx(String location, String domain, int index, Map<String, String> ndx);
 
   /**
    * Retrieve the MBean Index (name, file number) from Disk.
@@ -42,7 +41,7 @@ public interface MBeanStorage {
    * @param domain The MBean domain.
    * @return a Map containing the MBean names and the file indexes of the snapshot.
    */
-  public Map<String, String> GetMBeanNdx(String location, String domain);
+  public Map<String, String> getMBeanNdx(String location, String domain);
 
   /**
    * Retrieve the MBean Info from disk.
@@ -52,7 +51,7 @@ public interface MBeanStorage {
    * @param index the mbean index.
    * @return the MBeanInfo object which was captured.
    */
-  public MBeanInfo GetMBeanInfo(String location, String domain, int index);
+  public MBeanInfo getMBeanInfo(String location, String domain, int index);
 
   /**
    * Retrieve the MBean Attribute Map from Disk.
@@ -62,7 +61,7 @@ public interface MBeanStorage {
    * @param index the mbean index.
    * @return the capture MBean Attribute map.
    */
-  public Map<String, Object> GetMBeanData(String location, String domain, int index);
+  public Map<String, Object> getMBeanData(String location, String domain, int index);
 
   /**
    * Format the index for the underlying file storage.

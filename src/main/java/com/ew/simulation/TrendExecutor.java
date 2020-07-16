@@ -1,21 +1,12 @@
 package com.ew.simulation;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
+import com.ew.gson.GsonFactory;
+import com.google.gson.Gson;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import org.apache.commons.math3.random.RandomDataGenerator;
-import com.ew.gson.GsonFactory;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.internal.LinkedTreeMap;
 
 /**
  * <p>
@@ -45,36 +36,44 @@ public class TrendExecutor {
     System.out.println(json);
   }
 
+  /**
+   * Default constructor.
+   */
   public TrendExecutor() {
     classname = this.getClass().getName();
   }
 
+  /**
+   * Execute the trends against a MapFactory.
+   * @param factory the MapFactory that loaded the data.
+   * @return a map with the new simulated data.
+   */
   public Map executeTrends(MapFactory factory) {
-    Map data = factory.getDataMap();
+    Map data = factory.getSimulationMap();
     long time = System.currentTimeMillis();
 
     Set<String> keys = factory.reduce(data, query);
     for (String key : keys) {
-      Map values = (Map) data.get(key);
+      Map<String, Object> values = (Map<String, Object>) data.get(key);
       if (trends != null) {
         for (Trend trend : trends) {
           String attribute = trend.getAttribute();
-          Object oVal = values.get(attribute);
-          if (oVal instanceof Double) {
-            Double prior = (Double) oVal;
-            Double iNext = trend.nextDouble(time, prior);
-            values.put(attribute, iNext);
-          } else if (oVal instanceof Long) {
-            Long prior = (Long) oVal;
-            Long iNext = trend.nextLong(time, prior);
-            values.put(attribute, iNext);
-          } else if (oVal instanceof Integer) {
-            Integer prior = (Integer) oVal;
-            Integer iNext = trend.nextInteger(time, prior);
-            values.put(attribute, iNext);
-          } else if (oVal instanceof String) {
-            String sNext = trend.nextString(time);
-            values.put(attribute, sNext);
+          Object val = values.get(attribute);
+          if (val instanceof Double) {
+            Double prior = (Double) val;
+            Double next = trend.nextDouble(time, prior);
+            values.put(attribute, next);
+          } else if (val instanceof Long) {
+            Long prior = (Long) val;
+            Long next = trend.nextLong(time, prior);
+            values.put(attribute, next);
+          } else if (val instanceof Integer) {
+            Integer prior = (Integer) val;
+            Integer next = trend.nextInteger(time, prior);
+            values.put(attribute, next);
+          } else if (val instanceof String) {
+            String next = trend.nextString(time);
+            values.put(attribute, next);
           }
         }
         data.put(key, values);
@@ -82,42 +81,40 @@ public class TrendExecutor {
     }
     return data;
   }
-
-  private Map<String, Map> getDefaultDAta() {
-    Map<String, Map> ret = new HashMap<String, Map>();
+  
+  /**
+   * Create default test data.
+   * @return a map of default data for testing.
+   */
+  private Map<String, Map> getDefaultData() {
     Map tmp1 = new HashMap();
     tmp1.put("G1", 100);
     tmp1.put("G2", 200);
     tmp1.put("U1", 10);
+    Map<String, Map> ret = new HashMap<String, Map>();
     ret.put("A", tmp1);
 
     Map tmp2 = new HashMap();
     tmp2.put("G1", 150);
     tmp2.put("G2", 250);
     tmp2.put("U1", 15);
-    ret.put("B", tmp1);
+    ret.put("B", tmp2);
 
     Map tmp3 = new HashMap();
     tmp3.put("G1", 250);
     tmp3.put("G2", 550);
     tmp3.put("U1", 25);
-    ret.put("C", tmp1);
+    ret.put("C", tmp3);
     return ret;
   }
 
+  /**
+   * Create a list of Default Trends to Execute.  This is used for testing 
+   * and default Trend Generation.
+   */
   private void getDefaultTrends() {
-    GausianTrend normalTrend = new GausianTrend();
-    normalTrend.mu = 10.0D;
-    normalTrend.sigma = 3.0D;
-    normalTrend.reseed = true;
-    normalTrend.attribute = "RefreshPredictionCount";
-
-    UniformTrend uniformTrend = new UniformTrend();
-    uniformTrend.attribute = "RefreshCount";
-    uniformTrend.max = 1000.0D;
-    uniformTrend.min = 940.0D;
-    uniformTrend.reseed = true;
-
+    GausianTrend normalTrend = new GausianTrend(10.0D, 3.0D, true, "RefreshPredictionCount");
+    UniformTrend uniformTrend = new UniformTrend("RefreshCount", 1000.0D, 940.0D, true);
     TimeRangesTrend tr = TimeRangesTrend.getDefault();
 
     getTrends().add(normalTrend);
@@ -125,31 +122,27 @@ public class TrendExecutor {
     getTrends().add(tr);
   }
 
+  /** 
+   * Serialize the Object as JSon.
+   * @param te The Trend Executor to serialize.
+   * @return a JSon String.
+   */
   public static String toJSon(TrendExecutor te) {
     Gson gson = GsonFactory.getGSon();
     String json = gson.toJson(te);
     return json;
   }
 
-  /*
-   * public static TrendExecutor fromJSon(String json) { Gson gson = GsonFactory.getGSon(); Object
-   * ret; ret = gson.fromJson(json, TrendExecutor.class); return (TrendExecutor)ret; }
+  /**
+   * Create/Get the list of Trends for the executor.
    * 
-   * public static String toJSonList(List list) { Gson gson = GsonFactory.getGSon(); String json =
-   * gson.toJson(list); return json; }
-   * 
-   * public static List<Trend> fromJSonList(String json) { Gson gson = GsonFactory.getGSon();
-   * List<Trend> fromJson; fromJson = gson.fromJson(json, List.class); return fromJson; }
+   * @return a list of trends to execute against the query.
    */
-
   public List<Trend> getTrends() {
-    if (trends == null)
+    if (trends == null) {
       trends = new LinkedList<Trend>();
+    }
     return trends;
   }
-
-  /*
-   * public void addTrend(Trend trend) { getTrends().add(trend); }
-   */
 
 }

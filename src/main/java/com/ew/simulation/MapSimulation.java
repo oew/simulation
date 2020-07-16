@@ -1,27 +1,22 @@
 package com.ew.simulation;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
-
 import com.ew.capture.jmx.JmxDomainSimulation;
 import com.ew.gson.GsonFactory;
 import com.ew.util.FileHelper;
 import com.ew.util.JsonHelper;
 import com.ew.util.TimeHelper;
-import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
- * Class to load and run a simulation against a given Map Implementation
+ * Class to load and run a simulation against a given Map Implementation.
  * 
- * @author everett
+ * @author Everett Williams
+ * @since 1.0
  *
  */
 
@@ -34,43 +29,70 @@ public class MapSimulation {
   public long refreshMillis = 1000;
   public String classname;
 
+  /**
+   * Default constructor.
+   */
   public MapSimulation() {
     classname = this.getClass().getName();
   }
 
-  public static void main(String[] asArgs) {
+  /**
+   * Load and run the simulation.
+   * 
+   * @param args the first element contains the filename to load and execute.
+   */
+  public static void main(String[] args) {
     String location = "./auto.json";
-    if (asArgs.length > 0) {
-      location = asArgs[0];
+    if (args.length > 0) {
+      location = args[0];
     }
     MapSimulation ms = load(location);
     ms.run();
   }
 
-  public void simpleSim() {
-    MapFactory mf = (MapFactory) new JmxDomainSimulation();
-    TrendExecutor te = (TrendExecutor) new TrendExecutor();
-    this.maploaders = new LinkedList<MapFactory>();
+  /** 
+   * Create an empty simulation and save it to a file.
+   * @param filename the filename to create.
+   */
+  public void createDefaultSim(String filename) {
+    TrendExecutor te = new TrendExecutor();
     this.trendExecutors = new LinkedList<TrendExecutor>();
-    this.maploaders.add(mf);
     this.trendExecutors.add(te);
-    this.save("./auto.json");
+    this.maploaders = new LinkedList<MapFactory>();
+    MapFactory mf = new JmxDomainSimulation();
+    this.maploaders.add(mf);
+    this.save(filename);
   }
 
+  /**
+   * Save the simulation to disk.
+   * @param file The file name to store the simulation.
+   */
   public void save(String file) {
     String json;
     json = (new GsonBuilder().create()).toJson(this);
     FileHelper.append(file, json);
   }
 
+  /**
+   * Load the simulation from a JSON file.
+   * @param file a JSON file.
+   * @return the MapSimulation to execute.
+   */
   public static MapSimulation load(String file) {
     String json = FileHelper.getText(file);
     Map mapData = (Map) GsonFactory.getGSon().fromJson(json, Object.class);
+    // this is to implement polymorphism with GSON.
+    // it allows the classname to be stored in the json but the TypeAdapter implementations
+    // did not work.
     MapSimulation ms = (MapSimulation) JsonHelper.mapToClass(mapData);
     logger.info(ms);
     return ms;
   }
 
+  /**
+   * load the Map Structure and apply the Trends to the map.
+   */
   public void run() {
     MapFactory mapDefault = null;
     TimeHelper th = new TimeHelper();
@@ -96,21 +118,32 @@ public class MapSimulation {
     }
   }
 
-  public List<MapFactory> getMaploaders() {
-    if (maploaders == null)
+  /**
+   * Get a list simulation Map loaders.
+   * @return a list of MapLoaders
+   */
+  public List<MapFactory> getMapLoaders() {
+    if (maploaders == null) {
       maploaders = new LinkedList<MapFactory>();
+    }
     return maploaders;
   }
 
+  /**
+   * Get the list of TrendExecutors for the simulation.
+   * @return a list of TrendExecutors.
+   */
   public List<TrendExecutor> getTrendExecutors() {
-    if (trendExecutors == null)
+    if (trendExecutors == null) {
       trendExecutors = new LinkedList<TrendExecutor>();
+    }
     return trendExecutors;
   }
 
+  @Override
   public String toString() {
     return "MapSimulation [maploaders=" + maploaders.size() + ", TrendsExecutors="
-        + trendExecutors.size() + "Refresh Rates =  " + refreshMillis + "]";
+        + trendExecutors.size() + ", Refresh Rates =  " + refreshMillis + "]";
   }
 
 }

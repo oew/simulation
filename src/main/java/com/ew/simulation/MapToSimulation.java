@@ -1,59 +1,65 @@
 package com.ew.simulation;
 
-import java.util.Map;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import java.util.HashMap;
-import java.util.Iterator;
-
 import com.ew.capture.jmx.JmxDomainSimulation;
 import com.ew.gson.GsonFactory;
 import com.ew.util.FileHelper;
 import com.ew.util.MBeanHelper;
+import com.ew.util.PropertiesHelper;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import javax.management.MBeanAttributeInfo;
+import javax.management.MBeanInfo;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
- * MapToSimulation loads a JMX Snapshot and generates a Simulation for each MBean and numeric attribute.
+ * MapToSimulation loads a JMX Snapshot and generates a 
+ * Simulation for each MBean and numeric attribute.
  * 
- * @author everett
+ * @author Everett Williams
  * @since 1.0
  */
 public class MapToSimulation {
   String source;
   private static final Logger logger = LogManager.getLogger(MapToSimulation.class);
+  private Map<String, TrendExecutor> trendExcutorCache;
 
+  /**
+   * <p>Create a default simulation from an existing MapSnapshot.</p>
+   * Usage:
+   * MapToSimulation location sourcedomain targetdomain outputfile keypart
+   *
+   * <p>location : the directory containing the snapshot</p>
+   * <p>source domain : the domain snapshot file to create a simulation.</p>
+   * <p>target domain : the new domain for the simulation. This is 
+   * used to remap domains when using multiple snapshots in a single simulation.</p>
+   * <p>outputfile : the file to create.</p>
+   * <p>loadOnly : if true only the map loaders will be created, if false, trends will be added</p> 
+   * <p>keypart : if all MBeans of a keypart have the same attributes and can 
+   * use the same trends, this will create TrendExecutor for each unique key part.
+   * This will create a much smaller simulation file which is helpful for large snapshots.</p> 
+   * 
+   * @param args String array with arguments.
+   */
   public static void main(String[] args) {
     new MapToSimulation().run(args);
     System.exit(1);
   }
 
+  /**
+   * Create the simulation from an existing snapshot.
+   * @param args the command line arguments.
+   */
   public void run(String[] args) {
-    String location = "./";
-    String srcDomain = "%";
-    String targetDomain = "%";
-    String fullSimFile = "auto.json";
-    String keyPart = "";
-    if (args.length > 0) {
-      location = args[0];
-    }
-    if (args.length > 1) {
-      srcDomain = args[1];
-    }
+    String location = PropertiesHelper.getArgument(args, "loc", 0, "./");
+    String srcDomain = PropertiesHelper.getArgument(args, "src", 1, "%");
+    String targetDomain = PropertiesHelper.getArgument(args, "tgt", 2, "%");
+    String outFile = PropertiesHelper.getArgument(args, "out", 3, "auto.json");
+    String loadOnly = PropertiesHelper.getArgument(args, "loadOnly", 5, "false");
+    String keyPart = PropertiesHelper.getArgument(args, "keypart", 4, "");
 
-    if (args.length > 2) {
-      targetDomain = args[2];
-    }
-
-    if (args.length > 3) {
-      fullSimFile = args[3];
-    }
-
-    if (args.length > 4) {
-      keyPart = args[4];
-    }
-
-    String outputFile = location + fullSimFile;
+    String outputFile = location + outFile;
     if (FileHelper.exists(outputFile)) {
       logger.error("File " + outputFile + " exists no simulation created.");
       return;
@@ -65,70 +71,109 @@ public class MapToSimulation {
     sim.targetDomain = targetDomain;
     sim.serialization = "BINARY";
     sim.load();
-    Map mapData = sim.getDataMap();
+    Map<String, Map> mapData = sim.getSimulationMap();
     Map mapInfo = sim.getInfoMap();
-
     MapSimulation ms = new MapSimulation();
 
-    for (Iterator items = mapData.keySet().iterator(); items.hasNext();) {
-      String sKey = (String) items.next();
-      Map mapAttributes = (Map) mapData.get(sKey);
-
-      TrendExecutor te = getTrendExecutor(sKey, keyPart);
-      if (te == null) {
-        te = new TrendExecutor();
-        te.query = sKey;
-        for (Iterator att = mapAttributes.keySet().iterator(); att.hasNext();) {
-          String attrib = (String) att.next();
-          Object value = mapAttributes.get(attrib);
-          if (value instanceof Number) {
-            UniformTrend trend = new UniformTrend();
-            trend.attribute = attrib;
-            trend.isIncremental = false;
-            trend.max = 100;
-            trend.min = 50;
-            trend.reseed = true;
-            trend.classname = "UniformTrend";
-            te.getTrends().add(trend);
-          }
-        }
-        putTrendExecutor(sKey, te, keyPart);
-        ms.getTrendExecutors().add(te);
-      }
-    }
-
-    long trendsToExecute = ms.getTrendExecutors().size();
     JmxDomainSimulation simDef = new JmxDomainSimulation();
     simDef.location = location;
     simDef.sourceDomain = srcDomain;
     simDef.targetDomain = targetDomain;
     simDef.serialization = "BINARY";
-    ms.getMaploaders().add(simDef);
+    ms.getMapLoaders().add(simDef);
 
-    logger.info("Creating file " + outputFile + ", Trends Count = " + trendsToExecute);
-    ms.save(outputFile);
+    if (loadOnly.equals("true")){
+      logger.info("Creating file " + outputFile + ", Trends Count = 0");
+      ms.save(outputFile);
+    } else {
+      for (String key: mapData.keySet()) {
+        Map mapAttributes = (Map) mapData.get(key);
+        MBeanInfo nfo = (MBeanInfo) mapInfo.get(key);
+        
+        TrendExecutor te = getTrendExecutor(key, keyPart);
+        if (te == null) {
+          te = new TrendExecutor();
+          te.query = key;
+          for (Iterator att = mapAttributes.keySet().iterator(); att.hasNext();) {
+            String attrib = (String) att.next();
+            MBeanAttributeInfo ai = MBeanHelper.getAttributeInfo(nfo, attrib);
+            if (!ai.isWritable()) {
+              Object value = mapAttributes.get(attrib);
+              if (value instanceof Number) {
+                UniformTrend trend = new UniformTrend();
+                trend.attribute = attrib;
+                trend.isIncremental = false;
+                trend.max = 100;
+                trend.min = 50;
+                trend.reseed = true;
+                trend.classname = "UniformTrend";
+                te.getTrends().add(trend);
+              }
+            }
+          }
+          if (te.getTrends().size() > 0) {
+            if (keyPart.length() > 0) {
+              putTrendExecutor(key, te, keyPart);
+            }
+            ms.getTrendExecutors().add(te);
+          }
+        }
+      }
+    
+      long trendsToExecute = ms.getTrendExecutors().size();
+      logger.info("Creating file " + outputFile + ", Trends Count = " + trendsToExecute);
+      ms.save(outputFile);
+    }
   }
+  
 
-  private Map<String, TrendExecutor> mapCache;
-
-  private Map<String, TrendExecutor> getMapCache() {
-    if (mapCache == null)
-      mapCache = new HashMap<String, TrendExecutor>();
-    return mapCache;
+  /**
+   * Return a map TrendExecutors that are cached to prevent duplicates.
+   * @return a map of strings and TrendExecutors
+   */
+  private Map<String, TrendExecutor> getTrendExecutorCache() {
+    if (trendExcutorCache == null) {
+      trendExcutorCache = new HashMap<String, TrendExecutor>();
+    }
+    return trendExcutorCache;
   }
-
+  
+  /**
+   * Format the key for the simulation.
+   * 
+   * @param key the MBeanKey
+   * @param keyPart the key part which to limit the simulation
+   * @return The cache key for the MBean.  
+   *    
+   */
   private String formatKey(String key, String keyPart) {
-    if (keyPart.length() > 0)
+    if (keyPart.length() > 0) {
       return MBeanHelper.getNamePart(key, keyPart);
-    else
+    } else {
       return key;
+    }
   }
 
+  /**
+   * Get the trend executors for the key-keyPart combination. 
+   * if the keyPart is blank, null is returned.
+   *   
+   * @param key the MBean Key.
+   * @param keyPart the type to limit the 
+   * @return
+   */
   private TrendExecutor getTrendExecutor(String key, String keyPart) {
-    return getMapCache().get(formatKey(key, keyPart));
+    return getTrendExecutorCache().get(formatKey(key, keyPart));
   }
 
-  private TrendExecutor putTrendExecutor(String key, TrendExecutor te, String keyPart) {
-    return getMapCache().put(formatKey(key, keyPart), te);
+  /**
+   * Update the cache of TrendExecutors for the keyPart.
+   * 
+   * @param key The current MBeanKey.
+   * @param te The TrendExcutor to cache.
+   * @param keyPart The keyPart to limit the simulation too.
+   */
+  private void putTrendExecutor(String key, TrendExecutor te, String keyPart) {
+    getTrendExecutorCache().put(formatKey(key, keyPart), te);
   }
 }

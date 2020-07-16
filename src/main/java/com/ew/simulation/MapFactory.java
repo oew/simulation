@@ -2,6 +2,7 @@ package com.ew.simulation;
 
 import java.util.Map;
 import java.util.Set;
+
 /**
  * Encapsulation layer for Map creation, load and query.
  * 
@@ -10,15 +11,22 @@ import java.util.Set;
  *
  */
 public abstract class MapFactory {
+  /**
+   * Return the map for the simulation.
+   * @return a map containing the keys and attributes for the simulation.
+   */
+  public abstract Map<String, Map> getSimulationMap();
 
-  abstract public Map getDataMap();
+  /**
+   * Reduce the map based on a Query and return the resulting keys.
+   * @param data the Simulation Map.
+   * @param query A string query. 
+   * @return the Set of keys that match the query.
+   */
+  public abstract Set<String> reduce(Map data, String query);
 
-  public Set<String> reduce(Map data, String query) {
-    throw new UnsupportedOperationException();
-  };
-
-  public void load() {
-    throw new UnsupportedOperationException();
-
-  };
+  /**
+   * Load the Simulation Map.
+   */
+  public abstract void load();
 }

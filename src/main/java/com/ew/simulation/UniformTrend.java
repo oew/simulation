@@ -1,7 +1,7 @@
 package com.ew.simulation;
 
-import org.apache.commons.math3.random.RandomDataGenerator;
 import com.ew.gson.GsonFactory;
+import org.apache.commons.math3.random.RandomDataGenerator;
 
 
 /**

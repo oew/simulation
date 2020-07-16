@@ -14,34 +14,57 @@ import java.nio.file.Paths;
 import java.util.LinkedList;
 import java.util.List;
 
+/**
+ * Helper Class for file manipulation.
+ * 
+ * @author Everett Williams
+ * @since 1.0
+ */
 public class FileHelper {
-  public static File getFile(String sFileName) {
-    File fRet = new File(sFileName);
-    if (!fRet.exists()) {
+
+  /**
+   * Get a file handle from disk. Create the file if necessary.
+   * @param fileName the file to open-create
+   * @return the file handle
+   */
+  public static File getFile(String fileName) {
+    File ret = new File(fileName);
+    if (!ret.exists()) {
       try {
-        fRet.createNewFile();
+        ret.createNewFile();
       } catch (IOException e) {
         e.printStackTrace();
       }
     }
-    return fRet;
+    return ret;
   }
 
-  public static boolean exists(String sFileName) {
-    File fRet = new File(sFileName);
-    if (!fRet.exists()) {
+  /**
+   * Check if a file exists.
+   * @param fileName the file name to check for existence.
+   * @return true if the file exists.
+   */
+  public static boolean exists(String fileName) {
+    File ret = new File(fileName);
+    if (!ret.exists()) {
       return false;
     }
     return true;
   }
 
+  /**
+   * Return the file as a text string.
+   * @param fileName a file name to open.
+   * @return a text string from the file.
+   */
   public static String getText(String fileName) {
     File file = getFile(fileName);
     List<String> lines = null;
     List<String> out = new LinkedList();
 
-    if (!exists(fileName))
+    if (!exists(fileName)) {
       return "";
+    }
 
     try {
       lines = Files.readAllLines(Paths.get(fileName), Charset.forName("UTF-8"));
@@ -49,7 +72,7 @@ public class FileHelper {
       try {
         lines = Files.readAllLines(Paths.get(fileName), Charset.forName("ISO-8859-1"));
       } catch (IOException e2) {
-
+        e2.printStackTrace();
       }
     }
     StringBuffer sb = new StringBuffer();
@@ -59,6 +82,11 @@ public class FileHelper {
     return sb.toString();
   }
 
+  /**
+   * Get the files as a byte array.
+   * @param fileName the file name to open and read.
+   * @return the file as a byte array.
+   */
   public static byte[] getBytes(String fileName) {
     File file = getFile(fileName);
     FileInputStream fis;
@@ -77,19 +105,31 @@ public class FileHelper {
     return null;
   }
 
-  public static void append(String sFile, String text) {
+  /**
+   * Append to the end of a file.
+   * @param fileName the file name.
+   * @param text the string to append to the file.
+   */
+  public static void append(String fileName, String text) {
     try {
-      PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(sFile, true)));
+      PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(fileName, true)));
       out.println(text);
       out.flush();
       out.close();
     } catch (IOException e) {
+      e.printStackTrace();
     }
   }
 
-  protected static BufferedWriter getWriter(String sFileName) throws IOException {
+  /**
+   * Get a buffered writer for the file.
+   * @param fileName the file to open for writing 
+   * @return the BufferedWriter for the file
+   * @throws IOException if the file does not exist.
+   */
+  protected static BufferedWriter getWriter(String fileName) throws IOException {
     try {
-      BufferedWriter writer = new BufferedWriter(new FileWriter(sFileName, true));
+      BufferedWriter writer = new BufferedWriter(new FileWriter(fileName, true));
       return writer;
 
     } catch (IOException e) {
@@ -98,6 +138,11 @@ public class FileHelper {
     return null;
   }
 
+  /**
+   * Write the data to a file.
+   * @param name the file name.
+   * @param data the bytes to write.
+   */
   public static void writeFile(String name, byte[] data) {
     File file = FileHelper.getFile(name);
 
@@ -109,14 +154,11 @@ public class FileHelper {
         wps.flush();
         wps.close();
       } catch (FileNotFoundException e) {
-        // Bad filename
         e.printStackTrace();
       } catch (IOException e) {
-        // error writing
         e.printStackTrace();
       }
 
     }
   }
-
 }
