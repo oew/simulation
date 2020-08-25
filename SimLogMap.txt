@@ -1,0 +1,18 @@
+SIM0001~The file already exists,  the simulation will not over write an existing file.
+SIM0002~Creating file {0}, Trends Count = 0~a new simulation with no Trends is being created
+SIM0003~Creating file {0}, Trends Count = {1}~Attempting to save the simulation file to disk.
+SIM0004~Load time {0}ms~This is the time it took to load the simulation MBeans from disk.
+SIM0005~Loading MBeanInfo from disk : {0}... This may take a while...~Information log prior to starting the MBeanInfo Load from disk
+SIM0006~Execution time {0}ms~Information log containing the time required to update the Map with the trends.
+SIM0007~loading {0} MBeanAttributes from disk... This may take a while...~Information log prior to starting the MBeanAttributes Load from disk
+SIM0008~MBeans loaded from disk {0}~This is is related to SIM0007 stating that the total has been loaded.
+SIM0009~Saving MBean {0}~Informational log as the MBean is written to disk.
+SIM0010~Items loaded from disk : {0}~Informational log as the MBean data is read to disk.
+SIM0011~Query {0} is not a correctly formed MBean ObjectName. This is normally due to an incorrect domain name.~Check the MBean Domains to correct.
+SIM0012~Unable get MBean Attributes for, jmxdomain={0}, {1}~This MBeanServer error is created when the MBean attribute does not exist in the cache. Either it was not loaded or has expired
+SIM0013~Unable get MBean Attributes for, jmxdomain={0}, {1}~This MBeanServer error is created when one of the MBean attributes does not exist in the cache. Either it was not loaded or has expired
+UTIL0014~Invalid Classname {0}. Check the classpath for the class or the JSON file to correct the class~This occurs with either a pathing issue or an incorrect classname in the JSON Simulation file.
+UTIL0015~Invalid Access to classname {0} and attribute {1}. The attribute is either private or protected~This attribute will need to be made public for the JSON to be processed.
+SIM0016~Error Serializing class {0}. This is often due to class not being serializable~if the attribute is not serializable the MBean will be serialized but the attribute will be omitted.
+SIM0100~Loaded simulation from disk {0}~This is information describing the loader and the trend execution.
+

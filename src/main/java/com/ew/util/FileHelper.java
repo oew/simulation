@@ -81,7 +81,32 @@ public class FileHelper {
     }
     return sb.toString();
   }
+  
+  /**
+   * Return the file as a List of Strings
+   * @param fileName a file name to open.
+   * @return a List<String> containing the file.
+   */
+  public static List<String> getLines(String fileName) {
+    File file = getFile(fileName);
+    List<String> lines = null;
+    List<String> out = new LinkedList();
 
+    if (!exists(fileName)) {
+      return null;
+    }
+
+    try {
+      lines = Files.readAllLines(Paths.get(fileName), Charset.forName("UTF-8"));
+    } catch (IOException e) {
+      try {
+        lines = Files.readAllLines(Paths.get(fileName), Charset.forName("ISO-8859-1"));
+      } catch (IOException e2) {
+        e2.printStackTrace();
+      }
+    }
+    return lines;
+  }
   /**
    * Get the files as a byte array.
    * @param fileName the file name to open and read.

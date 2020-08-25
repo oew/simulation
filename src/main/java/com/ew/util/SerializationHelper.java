@@ -6,6 +6,9 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import com.ew.simulation.MapSimulation;
 
 
 /**
@@ -16,6 +19,7 @@ import java.io.ObjectOutputStream;
  *
  */
 public class SerializationHelper {
+  private static final Logger logger = LogManager.getLogger(SerializationHelper.class);
 
   /**
    * Convert an object to a byte array.
@@ -32,7 +36,7 @@ public class SerializationHelper {
       byte[] ret = out.toByteArray();
       return ret;
     } catch (Exception nse) {
-      System.out.println("Error serializing object " + obj.getClass().getName());
+      logger.error(LogHelper.format("UTIL0001", obj.getClass().getName()));
     }
     return null;
   }

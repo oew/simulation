@@ -4,6 +4,7 @@ import com.ew.capture.jmx.JmxDomainSimulation;
 import com.ew.gson.GsonFactory;
 import com.ew.util.FileHelper;
 import com.ew.util.JsonHelper;
+import com.ew.util.LogHelper;
 import com.ew.util.TimeHelper;
 import com.google.gson.GsonBuilder;
 import java.util.LinkedList;
@@ -86,7 +87,7 @@ public class MapSimulation {
     // it allows the classname to be stored in the json but the TypeAdapter implementations
     // did not work.
     MapSimulation ms = (MapSimulation) JsonHelper.mapToClass(mapData);
-    logger.info(ms);
+    logger.info(LogHelper.format("SIM0100",ms));
     return ms;
   }
 
@@ -102,14 +103,14 @@ public class MapSimulation {
       mapDefault = mapLoader;
     }
 
-    logger.info("Load time " + (System.currentTimeMillis() - now) + "ms");
+    logger.info(LogHelper.format("SIM0004", System.currentTimeMillis() - now));
 
     while (true) {
       now = System.currentTimeMillis();
       for (TrendExecutor te : trendExecutors) {
         te.executeTrends(mapDefault);
       }
-      logger.info("Execution time " + (System.currentTimeMillis() - now) + "ms");
+      logger.info(LogHelper.format("SIM0006", (System.currentTimeMillis() - now)));
       try {
         th.sleep(refreshMillis, true);
       } catch (InterruptedException e) {

@@ -7,8 +7,10 @@ import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
 import com.hazelcast.query.impl.predicates.LikePredicate;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -93,6 +95,27 @@ public class HazelcastHelper {
       keys.add(query);
     }
     return keys;
+  }
+
+  /**
+   * Apply a hazelcast query to a map.
+   * @param data the map to reduce.
+   * @param query the query to apply.
+   * @return the Set of keys meeting the query.
+   */
+  public Map invoke(Map data, String query, Object processor) {
+    EntryProcessor ep = (EntryProcessor)processor;
+    Map ret = null;
+    IMap map = (IMap) data;
+    LikePredicate lp = new LikePredicate("__key", query);
+    if (query.contains("%")) {
+      ret = map.executeOnEntries(ep, lp);
+    } else {
+      Set<String> set = new HashSet<String>();
+      set.add(query);
+      ret =  map.executeOnKeys(set, ep);
+    }
+    return ret;
   }
  
   protected HazelcastInstance instance;

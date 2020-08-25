@@ -45,7 +45,7 @@ dependencies {
 
 jar {
     manifest {
-        attributes "Main-Class": "com.ew.simulation.MapSimulation"
+        attributes "Main-Class": "com.tmm.simulation.MapSimulation"
     }
  
     from {
@@ -55,7 +55,7 @@ jar {
 
 task customJar(type: Jar) {
     manifest {
-        attributes "Main-Class": "com.ew.simulation.MapSimulation"
+        attributes "Main-Class": "com.tmm.simulation.MapSimulation"
     }
     baseName = 'simulation-full'
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }

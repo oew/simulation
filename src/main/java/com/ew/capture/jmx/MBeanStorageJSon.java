@@ -96,6 +96,12 @@ public class MBeanStorageJSon implements MBeanStorage {
         fromDisk.getNotifications());
   }
 
+  /**
+   * Convert a JSon string into a HashMap;
+   * 
+   * @param a JSon String
+   * @return a HashMap.
+   */
   public Map mapFromJSon(String data) {
     Gson gson = new Gson();
     Map ret;
@@ -115,7 +121,7 @@ public class MBeanStorageJSon implements MBeanStorage {
   }
 
   public static String INDEXSUFFIX = "-ndx.json";
-  public static String INFOSUFFIX = "-nfo.json";;
+  public static String INFOSUFFIX = "-nfo.json";
   public static String DATASUFFIX = "-dat.json";
 
 }

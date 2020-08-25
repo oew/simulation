@@ -1,5 +1,7 @@
 package com.ew.simulation;
 
+import java.io.Serializable;
+
 /**
  * <p>
  * The Trend interface is the primary mechanism for extending the Simulator.
@@ -22,7 +24,7 @@ package com.ew.simulation;
  * @version 1.0
  *
  */
-public class Trend {
+public class Trend implements Serializable{
   public String classname;
   public String attribute;
   public boolean isIncremental;
@@ -117,5 +119,57 @@ public class Trend {
    */
   public long nextDatetime(long timestamp) {
     throw new UnsupportedOperationException();
+  }
+  /**
+   * Returns the next value in the trend sequence.
+   * 
+   * @param timestamp The time stamp of the sequence.
+   * @param prior The prior value of the sequence.
+   * @return the next Double value of the sequence.
+   */
+  public Double next(long timestamp, Double prior) {
+    return this.nextDouble(timestamp, prior);
+  }
+
+  /**
+   * Returns the next value in the trend sequence.
+   * 
+   * @param timestamp The time stamp of the sequence.
+   * @param prior The prior value of the sequence.
+   * @return the next Integer value of the sequence.
+   */
+  public Integer next(long timestamp, Integer prior) {
+    return this.nextInteger(timestamp, prior);
+  }
+
+  /**
+   * Returns the next value in the trend sequence.
+   * 
+   * @param timestamp The time stamp of the sequence.
+   * @param prior The prior value of the sequence.
+   * @return the next Long value of the sequence.
+   */
+  public Long next(long timestamp, Long prior) {
+    return this.nextLong(timestamp, prior);
+  }
+
+  /**
+   * Returns the next value in the trend sequence.
+   * 
+   * @param timestamp The time stamp of the sequence.
+   * @return the next String value of the sequence.
+   */
+  public String next(long timestamp, String prior) {
+    return this.nextString(timestamp);
+  }
+
+  /**
+   * Returns the next value in the trend sequence.
+   * 
+   * @param timestamp The time stamp of the sequence.
+   * @return the next long date time value of the sequence.
+   */
+  public long next(long timestamp) {
+    return this.nextDatetime(timestamp);
   }
 }

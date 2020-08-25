@@ -3,6 +3,7 @@ package com.ew.capture.jmx;
 import com.ew.simulation.MapFactory;
 import com.ew.util.HazelcastHelper;
 import com.ew.util.MBeanHelper;
+import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
 import com.hazelcast.query.impl.predicates.LikePredicate;
 import java.util.HashSet;
@@ -182,5 +183,11 @@ public class JmxDomainSimulation extends MapFactory {
         e.printStackTrace();
       }
     }
+  }
+
+  @Override
+  public Map<String, Map> invoke(Map data, String query, Object processor) {
+    helper.invoke(data, query, processor);
+    return null;
   }
 }

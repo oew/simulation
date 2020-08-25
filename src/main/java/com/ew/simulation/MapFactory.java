@@ -29,4 +29,13 @@ public abstract class MapFactory {
    * Load the Simulation Map.
    */
   public abstract void load();
+
+  /**
+   * Invoke the processor againt all the items in the map that match the filter.
+   * @param data the Simulation Map.
+   * @param query A string query. 
+   * @param processor a processor object to execute on each entry. 
+   * @return a Map of items that were updated.
+   */
+  public abstract Map<String, Map> invoke (Map data, String query, Object processor);
 }

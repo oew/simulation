@@ -39,6 +39,7 @@ public class UniformTrend extends Trend {
 
   /**
    * Initialization constructor.
+   * 
    * @param attribute The attribute for the trend.
    * @param max The maximum for the trend
    * @param min The minimum for the trend
@@ -92,6 +93,7 @@ public class UniformTrend extends Trend {
 
   /**
    * Build a random data generator and apply seed if necessary.
+   * 
    * @return a Random number generator
    */
   protected RandomDataGenerator getRandom() {
@@ -107,6 +109,7 @@ public class UniformTrend extends Trend {
 
   /**
    * Create a json serialization string.
+   * 
    * @return a json string.
    */
   public String toJSon() {
@@ -116,6 +119,7 @@ public class UniformTrend extends Trend {
 
   /**
    * Create a UniformTrend from a json string.
+   * 
    * @param json a json string.
    * @return a UniformTrend.
    */

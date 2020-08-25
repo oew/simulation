@@ -3,6 +3,7 @@ package com.ew.simulation;
 import com.ew.capture.jmx.JmxDomainSimulation;
 import com.ew.gson.GsonFactory;
 import com.ew.util.FileHelper;
+import com.ew.util.LogHelper;
 import com.ew.util.MBeanHelper;
 import com.ew.util.PropertiesHelper;
 import java.util.HashMap;
@@ -28,7 +29,7 @@ public class MapToSimulation {
   /**
    * <p>Create a default simulation from an existing MapSnapshot.</p>
    * Usage:
-   * MapToSimulation location sourcedomain targetdomain outputfile keypart
+   * MapToSimulation location sourcedomain targetdomain outputfile loadOnly keypart
    *
    * <p>location : the directory containing the snapshot</p>
    * <p>source domain : the domain snapshot file to create a simulation.</p>
@@ -61,7 +62,7 @@ public class MapToSimulation {
 
     String outputFile = location + outFile;
     if (FileHelper.exists(outputFile)) {
-      logger.error("File " + outputFile + " exists no simulation created.");
+      logger.error("SIM0001: File " + outputFile + " exists no simulation created.");
       return;
     }
 
@@ -83,7 +84,7 @@ public class MapToSimulation {
     ms.getMapLoaders().add(simDef);
 
     if (loadOnly.equals("true")){
-      logger.info("Creating file " + outputFile + ", Trends Count = 0");
+      logger.info(LogHelper.format("SIM0002", outputFile));
       ms.save(outputFile);
     } else {
       for (String key: mapData.keySet()) {
@@ -121,7 +122,7 @@ public class MapToSimulation {
       }
     
       long trendsToExecute = ms.getTrendExecutors().size();
-      logger.info("Creating file " + outputFile + ", Trends Count = " + trendsToExecute);
+      logger.info(LogHelper.format("SIM0003", outputFile, trendsToExecute));
       ms.save(outputFile);
     }
   }

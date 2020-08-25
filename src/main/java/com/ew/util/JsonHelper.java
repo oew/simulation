@@ -5,8 +5,12 @@ import java.lang.reflect.Field;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import com.ew.simulation.MapSimulation;
 
 public class JsonHelper {
+  private static final Logger logger = LogManager.getLogger(JsonHelper.class);
   /**
    * Convert the Json generic map of data to the class information using the classname to determine
    * the java object to create.
@@ -19,6 +23,7 @@ public class JsonHelper {
     Object instance = null;
     String classname = (String) mapData.get("classname");
     String dftPackage = "com.ew.simulation.";
+    String errorKey = "";
 
     // allows for class shorthand in simulation
     if (!classname.contains(".")) {
@@ -27,6 +32,7 @@ public class JsonHelper {
     try {
       instance = Class.forName(classname).newInstance();
       for (String key : mapData.keySet()) {
+        errorKey = key;
         try {
           Class itemClass = instance.getClass();
           Field field = getDeclaredField(itemClass, key);
@@ -52,12 +58,12 @@ public class JsonHelper {
         }
       }
     } catch (ClassNotFoundException e) {
-      System.out.println("Invalid Classname " + classname
-          + " check the simulation file for the correct trend." + "");
+      logger.error(LogHelper.format("UTIL0014", classname));
       e.printStackTrace();
     } catch (InstantiationException e) {
       e.printStackTrace();
     } catch (IllegalAccessException e) {
+      logger.error(LogHelper.format("UTIL0015", classname, errorKey));
       e.printStackTrace();
     }
     return instance;

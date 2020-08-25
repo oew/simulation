@@ -2,10 +2,13 @@ package com.ew.simulation;
 
 import com.ew.gson.GsonFactory;
 import com.google.gson.Gson;
+import com.hazelcast.map.EntryProcessor;
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 /**
@@ -19,10 +22,11 @@ import java.util.Set;
  * @since 2020/05/19
  *
  */
-public class TrendExecutor {
+public class TrendExecutor implements EntryProcessor, Serializable {
   public String query = "";
   public List<Trend> trends;
   public String classname;
+  protected long time;
 
   /**
    * Main simply prints an example TrendExecutor for creating custom simulations.
@@ -50,38 +54,12 @@ public class TrendExecutor {
    */
   public Map executeTrends(MapFactory factory) {
     Map data = factory.getSimulationMap();
-    long time = System.currentTimeMillis();
+    time = System.currentTimeMillis();
 
-    Set<String> keys = factory.reduce(data, query);
-    for (String key : keys) {
-      Map<String, Object> values = (Map<String, Object>) data.get(key);
-      if (trends != null) {
-        for (Trend trend : trends) {
-          String attribute = trend.getAttribute();
-          Object val = values.get(attribute);
-          if (val instanceof Double) {
-            Double prior = (Double) val;
-            Double next = trend.nextDouble(time, prior);
-            values.put(attribute, next);
-          } else if (val instanceof Long) {
-            Long prior = (Long) val;
-            Long next = trend.nextLong(time, prior);
-            values.put(attribute, next);
-          } else if (val instanceof Integer) {
-            Integer prior = (Integer) val;
-            Integer next = trend.nextInteger(time, prior);
-            values.put(attribute, next);
-          } else if (val instanceof String) {
-            String next = trend.nextString(time);
-            values.put(attribute, next);
-          }
-        }
-        data.put(key, values);
-      }
-    }
+    data = factory.invoke(data, query, this);
     return data;
   }
-  
+
   /**
    * Create default test data.
    * @return a map of default data for testing.
@@ -145,4 +123,29 @@ public class TrendExecutor {
     return trends;
   }
 
+  @Override
+  public Object process(Entry entry) {
+    Map<String, Object> values = (Map<String, Object>) entry.getValue();
+    if (trends != null) {
+      for (Trend trend : trends) {
+        String attribute = trend.getAttribute();
+        Object val = values.get(attribute);
+        if (val instanceof Double) {
+          Double next = trend.next(time, (Double) val);
+          values.put(attribute, next);
+        } else if (val instanceof Long) {
+          Long next = trend.next(time, (Long) val);
+          values.put(attribute, next);
+        } else if (val instanceof Integer) {
+          Integer next = trend.next(time, (Integer) val);
+          values.put(attribute, next);
+        } else if (val instanceof String) {
+          String next = trend.next(time, (String) val);
+          values.put(attribute, next);
+        }
+      }
+  }
+  entry.setValue(values);
+  return entry;
+ }
 }

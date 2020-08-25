@@ -1,15 +1,24 @@
 package com.ew.capture.jmx;
 
+import com.ew.util.LogHelper;
 import com.ew.util.MBeanHelper;
 import com.ew.util.PropertiesHelper;
 import com.google.gson.Gson;
 import java.io.IOException;
 import java.text.DecimalFormat;
+import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import javax.management.Attribute;
 import javax.management.AttributeList;
 import javax.management.InstanceNotFoundException;
@@ -25,6 +34,11 @@ import org.apache.logging.log4j.Logger;
 
 public class JmxSnapshot {
   private static final Logger logger = LogManager.getLogger(JmxSnapshot.class.getName());
+
+  MBeanStorage storage;
+  Map map;
+  String domain;
+  String location;
 
   /**
    * Simple Constructor.
@@ -111,26 +125,31 @@ public class JmxSnapshot {
    * @return a map keyed by MBean Name and values of the MBean Attributes.
    */
   public Map getDomainData(String domain, String location) {
-    Map map = new HashMap();
     MBeanStorage storage = getStorage();
 
-    Map dataFiles = storage.getMBeanNdx(location, domain);
+    Map<String, String> dataFiles= storage.getMBeanNdx(location, domain);
+    Map map = new ConcurrentHashMap(dataFiles.size());
 
-    for (Iterator iterFiles = dataFiles.entrySet().iterator(); iterFiles.hasNext();) {
-      Entry e = (Entry) iterFiles.next();
-      String prefix = (String) e.getKey();
-      String key = (String) e.getValue();
+    logger.info(LogHelper.format("SIM0007", dataFiles.size()));
+    Map<String, Map<String, Object>> output =
+        dataFiles.entrySet()
+             .parallelStream()
+             .map(e -> {
+               String ndx = fmtNdx(e.getKey(), domain);
+               String name = e.getValue();
+               Map<String, Object> att = storage.getMBeanData(location, domain, Integer.parseInt(ndx));
+               return new AbstractMap.SimpleEntry<>(name, att);
+             }).collect(Collectors.toMap(
+                 Map.Entry::getKey,
+                 Map.Entry::getValue
+             ));    
 
-      logger.info("Loading key = " + key);
-      int index = Integer.valueOf(prefix.replaceFirst(domain, "")).intValue();
-
-      Map data = storage.getMBeanData(location, domain, index);
-
-      map.put(key, data);
-    }
-    return map;
+    logger.info(LogHelper.format("SIM0010", output.size()));
+    return output;
   }
 
+
+    
   /**
    * Get the MBeanInfo map for the domain from the specified location.
    * 
@@ -138,24 +157,39 @@ public class JmxSnapshot {
    * @param location the disk location of the storage
    * @return a map keyed by MBean name and values of the MBeanInfo.
    */
-  public Map getDomainInfo(String domain, String location) {
+  public Map<String, Object> getDomainInfo(String domain, String location) {
     Map map = new HashMap();
     MBeanStorage storage = getStorage();
-    Map dataFiles = storage.getMBeanNdx(location, domain);
+    Map<String, String> dataFiles= storage.getMBeanNdx(location, domain);
+   
+    logger.info(LogHelper.format("SIM0005", dataFiles.size()));
+      Map<String, Object> output =
+          dataFiles.entrySet()
+               .parallelStream()
+               .map(e -> {
+                 String ndx = fmtNdx(e.getKey(), domain);
+                 String name = e.getValue();
+                 MBeanInfo info = storage.getMBeanInfo(location, domain, Integer.parseInt(ndx));
+                 return new AbstractMap.SimpleEntry<>(name, info);
+               }).collect(Collectors.toMap(
+                   Map.Entry::getKey,
+                   Map.Entry::getValue
+               ));    
 
-    for (Iterator iterFiles = dataFiles.entrySet().iterator(); iterFiles.hasNext();) {
-      Entry e = (Entry) iterFiles.next();
-
-      String prefix = (String) e.getKey();
-      String key = (String) e.getValue();
-      String sndx = prefix.replaceFirst(domain, "");
-      int index = Integer.valueOf(sndx).intValue();
-
-      MBeanInfo info = storage.getMBeanInfo(location, domain, index);
-      map.put(key, info);
+    logger.info(LogHelper.format("SIM0008", output.size()));
+    return output;
+  }
+  
+  /** 
+   * This is to provide compatibility between snapshots.
+   * @param domain
+   * @return
+   */
+  private String fmtNdx(String ndx, String domain) {
+    if (ndx.startsWith(domain)) {
+      return ndx.substring(domain.length());
     }
-    return map;
-
+    return ndx;
   }
 
   /**
@@ -164,47 +198,66 @@ public class JmxSnapshot {
    * @param mbsc The MBeanSErverConnection.
    * @param domain The Domain to capture.
    * @param location The disk location to store the information.
+   * @throws IOException 
    */
-  public void captureDomain(MBeanServerConnection mbsc, String domain, String location) {
-    try {
+  public void captureDomain(MBeanServerConnection mbsc, String domain, String location) throws IOException {
       MBeanStorage storage = getStorage();
-
-      String filter = domain + ":*";
-      ObjectName onQuery = new ObjectName(filter);
-      Set<ObjectName> setNames = mbsc.queryNames(onQuery, null);
-      Map<String, String> mapMBeans = new HashMap<String, String>();
-
-      Integer fileNdx = 1;
       DecimalFormat format = new DecimalFormat("00000000");
 
-      for (ObjectName on : setNames) {
-        String fileBase = domain + format.format(fileNdx);
-        String mbeanName = "jmxdomain=" + on.getDomain() + "," + on.getKeyPropertyListString();
-        logger.info("Saving MBean " + mbeanName);
+      Map<String, String> mapMBeans = new HashMap<String, String>();
+      String filter = domain + ":*";
+      ObjectName onQuery;
+      try {
+        onQuery = new ObjectName(filter);
+        Set<ObjectName> setNames = mbsc.queryNames(onQuery, null);
+        AtomicInteger al = new AtomicInteger(-1);
+        Map<String, String> output =
+            setNames.stream()
+            .map(on -> captureMBean(on, mbsc, location, domain, storage, al))
+            .collect(Collectors.toMap(
+                     Map.Entry::getKey,
+                     Map.Entry::getValue
+                 ));    
 
-        mapMBeans.put(fileBase, mbeanName);
-        MBeanInfo mbi = mbsc.getMBeanInfo(on);
-
-        Map mapData = objectNameToMap(mbsc, on, mbi);
-
-        storage.storeMBean(location, domain, fileNdx, mapData, mbi);
-        fileNdx++;
+        storage.storeMBeanNdx(location, domain, 0, output);
+     } catch (MalformedObjectNameException e1) {
+        logger.info(LogHelper.format("SIM0011", filter));
+        e1.printStackTrace();
       }
+     }
 
-      storage.storeMBeanNdx(location, domain, 0, mapMBeans);
+  /**
+   * Capture a single MBean and store it to disk.
+   * 
+   * @param on the ObjectName to capture
+   * @param mbsc the source MBeanServer
+   * @param location the location to store the MBean
+   * @param domain the Domain which the MBean is coming
+   * @param storage the storage class to use
+   * @param cnt the identity counter for the domain
+   * @return the created file identifier and the MBean string key.
+   */
+  private Map.Entry<String, String> captureMBean(ObjectName on, MBeanServerConnection mbsc, String location, String domain, MBeanStorage storage, AtomicInteger cnt) {
+    DecimalFormat format = new DecimalFormat("00000000");
+    String mbeanName = "jmxdomain=" + on.getDomain() + "," + on.getKeyPropertyListString();
+    Integer fileNdx = cnt.getAndAdd(1);
+    String fileBase = domain + format.format(fileNdx);
+    logger.info(LogHelper.format("SIM0009", mbeanName));
+   try {
+     MBeanInfo mbi = mbsc.getMBeanInfo(on);
+     Map mapData = objectNameToMap(mbsc, on, mbi);
+     storage.storeMBean(location, domain, fileNdx, mapData, mbi);
+   } catch (InstanceNotFoundException e) {
+     throw new RuntimeException(e);
+   } catch (IntrospectionException e) {
+     throw new RuntimeException(e);
+   } catch (ReflectionException e) {
+     throw new RuntimeException(e);
+   } catch (IOException e) {
+     throw new RuntimeException(e);
+   }
 
-    } catch (MalformedObjectNameException e) {
-      e.printStackTrace();
-    } catch (IOException e) {
-      e.printStackTrace();
-    } catch (InstanceNotFoundException e) {
-      e.printStackTrace();
-    } catch (IntrospectionException e) {
-      e.printStackTrace();
-    } catch (ReflectionException e) {
-      e.printStackTrace();
-    }
-
+   return new AbstractMap.SimpleEntry<>(fileBase, mbeanName);
   }
 
   /**

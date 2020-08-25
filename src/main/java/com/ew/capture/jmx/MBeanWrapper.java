@@ -1,6 +1,7 @@
 package com.ew.capture.jmx;
 
 import com.ew.simulation.MapFactory;
+import com.ew.util.LogHelper;
 import java.util.HashMap;
 import java.util.Map;
 import javax.management.Attribute;
@@ -58,7 +59,7 @@ public class MBeanWrapper implements DynamicMBean {
       Attribute v = makeAttribute(value, attribute);
       return v;
     } else {
-      logger.error("Unable to get MBean Attribue, " + attribute + ", for MBean, " + cacheKey);
+      logger.error(LogHelper.format("SIM0013", this.domain, this.cacheKey));
       return null;
     }
   }
@@ -112,8 +113,7 @@ public class MBeanWrapper implements DynamicMBean {
       }
       return ret;
     } else {
-      logger.error(
-          "Unable get MBean Attributes for, " + "jmxdomain=" + this.domain + "," + this.cacheKey);
+      logger.error(LogHelper.format("SIM0012", this.domain, this.cacheKey));
       return null;
     }
   }
