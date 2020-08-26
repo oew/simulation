@@ -1,4 +1,5 @@
-#  JMX simulation captures existing JMX servers,  creates a simulation, and recreates the captured server and applies the simulation to the server.
+#  JMX simulation 
+captures existing JMX servers, creates a simulation, and recreates the captured server and applies the simulation to the server.
 
 Build Requires:
   java 1.8 JDK (or greater)
