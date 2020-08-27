@@ -17,7 +17,7 @@ captures existing JMX servers, creates a simulation, and recreates the captured 
 - java 1.8 JDK (or greater)
 
 ## To Capture a domain
--captureJmx.sh : a demo script captures a Catalina domain from JMX MBeanServer (localhost:9097) and stores it in the tomcat directory.
+- captureJmx.sh : a demo script captures a Catalina domain from JMX MBeanServer (localhost:9097) and stores it in the tomcat directory.
 
 - java -cp simulation-full.jar -Dlog4j.configurationFile=./log4j2.xml com.tmm.capture.jmx.JmxSnapshot \<ip\> \<port\> \<domain\> \<usernameOrDash\> \<PasswordOrDash\> \<OutputDir\>
   
